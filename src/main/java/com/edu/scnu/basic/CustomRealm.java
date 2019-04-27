@@ -29,7 +29,7 @@ public class CustomRealm extends AuthorizingRealm {
     {
         super.setName("customRealm");
         userMap = new HashMap<>();
-        userMap.put("Tom", "123456");
+        userMap.put("Tom", "e10adc3949ba59abbe56e057f20f883e");
 
         roleMap = new HashMap<>();
         Set<String> roles = new HashSet<String>() {{

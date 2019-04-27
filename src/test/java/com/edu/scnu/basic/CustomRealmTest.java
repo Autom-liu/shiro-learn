@@ -2,6 +2,7 @@ package com.edu.scnu.basic;
 
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.authz.UnauthorizedException;
 import org.apache.shiro.mgt.DefaultSecurityManager;
 import org.apache.shiro.subject.Subject;
@@ -31,6 +32,12 @@ public class CustomRealmTest {
         DefaultSecurityManager securityManager = new DefaultSecurityManager();
         // 将realm添加到环境中（就这个地方不一样了）
         securityManager.setRealm(customRealm);
+
+        // 增加加密处理
+        HashedCredentialsMatcher matcher = new HashedCredentialsMatcher();
+        matcher.setHashAlgorithmName("md5");  // 加密算法
+        matcher.setHashIterations(1); // 加密次数
+        customRealm.setCredentialsMatcher(matcher);  // 设置到realm中去
 
         // 2. 主体提交认证请求
         SecurityUtils.setSecurityManager(securityManager);
