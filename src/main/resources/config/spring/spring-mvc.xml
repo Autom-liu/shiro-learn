@@ -16,10 +16,14 @@
     <bean class="org.apache.shiro.spring.web.ShiroFilterFactoryBean" id="shiroFilter">
         <property name="securityManager" ref="securityManager" />
         <property name="loginUrl" value="/user/login" />
-        <property name="unauthorizedUrl" value="403.html" />
+        <property name="unauthorizedUrl" value="/403.html" />
         <property name="filterChainDefinitions">
             <value>
                 /user/login = anon
+                /user/add = perms["user:add"]
+                /user/delete = perms["user:add", "user:delete", "user:query"]
+                /sys/admin = roles["admin"]
+                /sys/public = roles["admin", "public"]
                 /** = authc
             </value>
         </property>

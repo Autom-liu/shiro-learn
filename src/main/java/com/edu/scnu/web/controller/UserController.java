@@ -36,4 +36,14 @@ public class UserController {
         }
         return "redirect:/sys/index";
     }
+
+    @RequestMapping(value = "/add", method = RequestMethod.GET)
+    public String add() {
+        return "/user/add";
+    }
+
+    @RequestMapping(value = "/delete", method = RequestMethod.GET)
+    public String delete() {
+        return "/user/delete";
+    }
 }

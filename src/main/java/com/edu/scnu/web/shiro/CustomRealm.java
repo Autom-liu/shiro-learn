@@ -1,5 +1,7 @@
 package com.edu.scnu.web.shiro;
 
+import com.edu.scnu.bean.User;
+import com.edu.scnu.service.UserService;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -8,10 +10,10 @@ import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.subject.PrincipalCollection;
-import org.apache.shiro.util.ByteSource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Set;
 
 /**
  * @ClassName CustomRealm
@@ -23,30 +25,11 @@ import java.util.*;
 @Component
 public class CustomRealm extends AuthorizingRealm {
 
-    private Map<String, String> userMap;
+    @Autowired
+    private UserService userService;
 
-    private Map<String, Set<String>> roleMap;
-
-    private Map<String, Set<String>> permissionMap;
-
-    {
+    public CustomRealm() {
         super.setName("customRealm");
-        userMap = new HashMap<>();
-        userMap.put("Tom", "e10adc3949ba59abbe56e057f20f883e");
-
-        roleMap = new HashMap<>();
-        Set<String> roles = new HashSet<String>() {{
-            add("admin");
-            add("public");
-        }};
-        roleMap.put("Tom", roles);
-
-        permissionMap = new HashMap<>();
-        Set<String> permission = new HashSet<String>() {{
-            add("user:add");
-            add("user:delete");
-        }};
-        permissionMap.put("admin", permission);
     }
 
     /**
@@ -58,12 +41,12 @@ public class CustomRealm extends AuthorizingRealm {
      **/
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
-        String username = (String) principals.getPrimaryPrincipal();
-        Set<String> roles = this.getRoleByUsername(username);
         SimpleAuthorizationInfo authorizationInfo = new SimpleAuthorizationInfo();
+        String username = (String) principals.getPrimaryPrincipal();
+        Set<String> roles = userService.getRolesByUsername(username);
         authorizationInfo.setRoles(roles);
-        Set<String> permissions = this.getPermissionByUsername(username);
-        authorizationInfo.setStringPermissions(permissions);
+        Set<String> permission = userService.findPermissionByUsername(username);
+        authorizationInfo.setStringPermissions(permission);
         return authorizationInfo;
     }
 
@@ -77,33 +60,12 @@ public class CustomRealm extends AuthorizingRealm {
     @Override
     protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
         String username = (String) token.getPrincipal();
-        String password = this.getPasswordByUsername(username);
-        if (password == null) {
+        User user = userService.findByUsername(username);
+        if (user == null) {
             return null;
         }
-
-        SimpleAuthenticationInfo authenticationInfo = new SimpleAuthenticationInfo("Tom", password, "customRealm");
-
+        SimpleAuthenticationInfo authenticationInfo = new SimpleAuthenticationInfo(user.getUsername(), user.getPassword(), "customRealm");
         return authenticationInfo;
     }
 
-    private String getPasswordByUsername(String username) {
-        return userMap.get(username);
-    }
-
-    private Set<String> getRoleByUsername(String username) {
-        return roleMap.get(username);
-    }
-
-    private Set<String> getPermissionByUsername(String username) {
-        Set<String> roles = this.getRoleByUsername(username);
-        Set<String> result = new HashSet<>();
-        for (String role : roles) {
-            Set<String> permissions = permissionMap.get(role);
-            if(permissions != null) {
-                result.addAll(permissions);
-            }
-        }
-        return result;
-    }
 }

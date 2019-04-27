@@ -20,4 +20,14 @@ public class IndexController {
         System.out.println("...........");
         return "/sys/index";
     }
+
+    @RequestMapping(value = "/admin", method = RequestMethod.GET)
+    public String admin() {
+        return "/sys/admin";
+    }
+
+    @RequestMapping(value = "/public", method = RequestMethod.GET)
+    public String publicc() {
+        return "/sys/public";
+    }
 }
