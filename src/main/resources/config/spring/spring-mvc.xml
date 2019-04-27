@@ -12,6 +12,26 @@
     <!--    静态资源文件-->
     <mvc:default-servlet-handler />
 
+
+    <bean class="org.apache.shiro.spring.web.ShiroFilterFactoryBean" id="shiroFilter">
+        <property name="securityManager" ref="securityManager" />
+        <property name="loginUrl" value="/user/login" />
+        <property name="unauthorizedUrl" value="403.html" />
+        <property name="filterChainDefinitions">
+            <value>
+                /user/login = anon
+                /* = authc
+            </value>
+        </property>
+    </bean>
+
+    <bean class="org.apache.shiro.web.mgt.DefaultWebSecurityManager" id="securityManager">
+        <property name="realm" ref="customRealm" />
+    </bean>
+
+
+    <bean class="com.edu.scnu.web.shiro.CustomRealm" id="customRealm"></bean>
+
     <!--    视图解析器-->
     <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
         <property name="prefix" value="/WEB-INF/jsp" />
