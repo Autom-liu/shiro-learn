@@ -39,6 +39,11 @@ public class JDBCRealmTest {
     public void initRealm() {
         jdbcRealm.setDataSource(druidDataSource);
         jdbcRealm.setPermissionsLookupEnabled(true);
+        String userSql = "select password from t_user where username = ?";
+        jdbcRealm.setAuthenticationQuery(userSql);
+
+        String roleSql = "select role_name from t_user_role where user_id = ?";
+        jdbcRealm.setUserRolesQuery(roleSql);
     }
 
     @Test
