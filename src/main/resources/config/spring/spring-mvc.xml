@@ -30,7 +30,14 @@
     </bean>
 
 
-    <bean class="com.edu.scnu.web.shiro.CustomRealm" id="customRealm"></bean>
+    <bean class="com.edu.scnu.web.shiro.CustomRealm" id="customRealm">
+        <property name="credentialsMatcher" ref="matcher" />
+    </bean>
+
+    <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher" id="matcher">
+        <property name="hashAlgorithmName" value="md5" />
+        <property name="hashIterations" value="1" />
+    </bean>
 
     <!--    视图解析器-->
     <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
