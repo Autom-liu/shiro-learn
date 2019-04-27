@@ -2,9 +2,10 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:aop="http://www.springframework.org/schema/aop"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
 	      http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
-	      http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+	      http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
 
     <context:component-scan base-package="com.edu.scnu.web.controller" />
     <!--    注解配置-->
@@ -20,17 +21,8 @@
         <property name="filterChainDefinitions">
             <value>
                 /user/login = anon
-                /user/add = perms["user:add"]
-                /user/delete = perms["user:add", "user:delete"]
-                /sys/admin = roles["admin", "public"]
-                /sys/public = roleOr["admin", "public"]
                 /** = authc
             </value>
-        </property>
-        <property name="filters">
-            <util:map>
-                <entry key="roleOr" value-ref="roleOrFilter"></entry>
-            </util:map>
         </property>
     </bean>
 
@@ -48,7 +40,11 @@
         <property name="hashIterations" value="1" />
     </bean>
 
-    <bean class="com.edu.scnu.web.shiro.RoleOrFilter" id="roleOrFilter"></bean>
+    <aop:config proxy-target-class="true" />
+    <bean class="org.apache.shiro.spring.LifecycleBeanPostProcessor" />
+    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor" >
+        <property name="securityManager" ref="securityManager" />
+    </bean>
 
     <!--    视图解析器-->
     <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">

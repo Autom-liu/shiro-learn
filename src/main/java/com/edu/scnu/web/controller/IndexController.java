@@ -1,5 +1,6 @@
 package com.edu.scnu.web.controller;
 
+import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -21,11 +22,13 @@ public class IndexController {
         return "/sys/index";
     }
 
+    @RequiresRoles({"admin"})
     @RequestMapping(value = "/admin", method = RequestMethod.GET)
     public String admin() {
         return "/sys/admin";
     }
 
+    @RequiresRoles({"admin", "public"})
     @RequestMapping(value = "/public", method = RequestMethod.GET)
     public String publicc() {
         return "/sys/public";

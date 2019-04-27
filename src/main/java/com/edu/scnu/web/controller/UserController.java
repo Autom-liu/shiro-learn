@@ -4,6 +4,7 @@ import com.edu.scnu.bean.User;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.apache.shiro.subject.Subject;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,11 +38,13 @@ public class UserController {
         return "redirect:/sys/index";
     }
 
+    @RequiresPermissions({"user:add"})
     @RequestMapping(value = "/add", method = RequestMethod.GET)
     public String add() {
         return "/user/add";
     }
 
+    @RequiresPermissions({"user:delete"})
     @RequestMapping(value = "/delete", method = RequestMethod.GET)
     public String delete() {
         return "/user/delete";
