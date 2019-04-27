@@ -38,6 +38,7 @@ public class JDBCRealmTest {
     @Before
     public void initRealm() {
         jdbcRealm.setDataSource(druidDataSource);
+        jdbcRealm.setPermissionsLookupEnabled(true);
     }
 
     @Test
