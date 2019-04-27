@@ -8,6 +8,7 @@ import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.subject.PrincipalCollection;
+import org.apache.shiro.util.ByteSource;
 
 import java.util.*;
 
@@ -29,7 +30,7 @@ public class CustomRealm extends AuthorizingRealm {
     {
         super.setName("customRealm");
         userMap = new HashMap<>();
-        userMap.put("Tom", "e10adc3949ba59abbe56e057f20f883e");
+        userMap.put("Tom", "73bea81c6c06bacab41a995495239545");
 
         roleMap = new HashMap<>();
         Set<String> roles = new HashSet<String>() {{
@@ -46,7 +47,13 @@ public class CustomRealm extends AuthorizingRealm {
         permissionMap.put("admin", permission);
     }
 
-
+    /**
+    * @Author Autom
+    * @Description 获取用户的角色和权限的相关逻辑，提供shiro去校验
+    * @Date 15:39 2019-04-27
+    * @Param [principals]
+    * @return org.apache.shiro.authz.AuthorizationInfo
+    **/
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
         String username = (String) principals.getPrimaryPrincipal();
@@ -73,7 +80,11 @@ public class CustomRealm extends AuthorizingRealm {
             return null;
         }
 
-        return new SimpleAuthenticationInfo("Tom", password, "customRealm");
+        SimpleAuthenticationInfo authenticationInfo = new SimpleAuthenticationInfo("Tom", password, "customRealm");
+        // 加密加盐处理
+        authenticationInfo.setCredentialsSalt(ByteSource.Util.bytes("mark"));
+
+        return authenticationInfo;
     }
 
     private String getPasswordByUsername(String username) {
