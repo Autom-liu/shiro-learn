@@ -44,6 +44,15 @@
         <property name="credentialsMatcher" ref="matcher" />
     </bean>
 
+    <bean class="org.apache.shiro.web.mgt.CookieRememberMeManager" id="cookieRememberMeManager" >
+        <property name="cookie" ref="cookie" />
+    </bean>
+
+    <bean class="org.apache.shiro.web.servlet.SimpleCookie" id="cookie">
+        <constructor-arg value="rememberMe" />
+        <property name="maxAge" value="10" />
+    </bean>
+
     <!--  shiro认证加密算法  -->
     <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher" id="matcher">
         <property name="hashAlgorithmName" value="md5" />

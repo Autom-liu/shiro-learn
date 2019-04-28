@@ -31,6 +31,7 @@ public class UserController {
         Subject subject = SecurityUtils.getSubject();
         UsernamePasswordToken token = new UsernamePasswordToken(user.getUsername(), user.getPassword());
         try {
+            token.setRememberMe(true);
             subject.login(token);
         } catch (AuthenticationException e) {
             return "redirect:/user/login";
