@@ -44,6 +44,7 @@ public class CustomRealm extends AuthorizingRealm {
         SimpleAuthorizationInfo authorizationInfo = new SimpleAuthorizationInfo();
         String username = (String) principals.getPrimaryPrincipal();
         Set<String> roles = userService.getRolesByUsername(username);
+        System.out.println("从数据库中拿到数据....");
         authorizationInfo.setRoles(roles);
         Set<String> permission = userService.findPermissionByUsername(username);
         authorizationInfo.setStringPermissions(permission);

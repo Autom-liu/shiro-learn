@@ -28,6 +28,7 @@
     <bean class="org.apache.shiro.web.mgt.DefaultWebSecurityManager" id="securityManager">
         <property name="realm" ref="customRealm" />
         <property name="sessionManager" ref="sessionManager"/>
+        <property name="cacheManager" ref="cacheManager" />
     </bean>
     <!--  shiro 会话管理器  -->
     <bean class="com.edu.scnu.web.shiro.CustomSessionManager" id="sessionManager">
@@ -35,6 +36,8 @@
     </bean>
     <!--  自定义的会话管理操作  -->
     <bean class="com.edu.scnu.web.shiro.RedisSession" id="redisSession" />
+
+    <bean class="com.edu.scnu.web.shiro.RedisCacheManager" id="cacheManager" />
 
     <!-- 自定义Realm -->
     <bean class="com.edu.scnu.web.shiro.CustomRealm" id="customRealm">
