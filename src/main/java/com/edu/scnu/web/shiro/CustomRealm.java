@@ -32,6 +32,7 @@ public class CustomRealm extends AuthorizingRealm {
         super.setName("customRealm");
     }
 
+
     /**
      * @Author Autom
      * @Description 获取用户的角色和权限的相关逻辑，提供shiro去校验
@@ -65,7 +66,8 @@ public class CustomRealm extends AuthorizingRealm {
         if (user == null) {
             return null;
         }
-        SimpleAuthenticationInfo authenticationInfo = new SimpleAuthenticationInfo(user.getUsername(), user.getPassword(), "customRealm");
+        // 返回全局唯一的realm名称即可
+        SimpleAuthenticationInfo authenticationInfo = new SimpleAuthenticationInfo(user.getUsername(), user.getPassword(), this.getClass().getName());
         return authenticationInfo;
     }
 
