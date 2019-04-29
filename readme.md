@@ -278,6 +278,53 @@ public interface Realm {
 虽然shiro提供了一些内置的Realm，但是在实际开发项目中很少用到它们
 多数情况下都需要自定义实现Realm，但是自定义的realm并不是直接继承该类，在下一章节将会描述如何自定义
 
+在此之前，先介绍一下密码匹配器
+
+## CredentialsMatcher
+
+密码匹配器，它作为认证中心的一个属性存在：
+
+```java
+public abstract class AuthenticatingRealm extends CachingRealm implements Initializable {
+    //... 此处省略万行代码
+    private CredentialsMatcher credentialsMatcher;
+    //... 此处省略万行代码
+}
+```
+
+在它里面用到该匹配器的地方，就是用来校验主体信息和用户信息是否匹配的：
+
+```java
+
+    protected void assertCredentialsMatch(AuthenticationToken token, AuthenticationInfo info) throws AuthenticationException {
+        CredentialsMatcher cm = getCredentialsMatcher();
+        if (cm != null) {
+            if (!cm.doCredentialsMatch(token, info)) {
+                //not successful - throw an exception to indicate this:
+                String msg = "Submitted credentials for token [" + token + "] did not match the expected credentials.";
+                throw new IncorrectCredentialsException(msg);
+            }
+        } else {
+            throw new AuthenticationException("A CredentialsMatcher must be configured in order to verify " +
+                    "credentials during authentication.  If you do not wish for credentials to be examined, you " +
+                    "can configure an " + AllowAllCredentialsMatcher.class.getName() + " instance.");
+        }
+    }
+```
+
+它是一个接口，里面只有一个用于校验凭证是否匹配的方法：
+
+```java
+public interface CredentialsMatcher {
+    boolean doCredentialsMatch(AuthenticationToken token, AuthenticationInfo info);
+}
+```
+
+shiro提供常用的有两个实现类：一种是`SimpleCredentialsMatcher`提供简单的密码校验，
+另外一种是`HashedCredentialsMatcher` 提供基于常用hash加密算法校验。
+
+当然如果对凭证校验这一块有特殊的业务需求，那也需要自己手动实现一下了
+
 ## AuthorizingSecurityManager
 
 权限校验管理中心，主要属性为Authorizer，一个需要被实现的接口
@@ -389,4 +436,190 @@ public interface AuthenticationInfo extends Serializable {
     </bean>
 ```
 
+## SessionsSecurityManager
 
+会话管理中心，主要属性为sessionManager，它是一个接口，shiro默认提供了基于java SE环境的会话
+以及java web环境session的会话，当然，也可以不依赖与底层tomcat容器。
+
+提供了会话管理，会话事件监听，会话持久化存储，容器集群，过期支持，对web透明，SSO单点登录支持。
+
+直接shiro会话可以代替web容器的会话。
+
+shiro提供的默认实现是`DefaultSessionManager`、`DefaultWebSessionManager` 和 `ServletContainerSessionManager`
+
+- DefaultSessionManager 适用于java SE环境
+- ServletContainerSessionManager：适用于web环境，使用的是tomcat提供的session会话管理
+- DefaultWebSessionManager：是shiro自带的适用于web环境的会话管理，比servlet的session更强大，因此也更常用。
+
+他们之间的类关系以及依赖关系如下图：
+
+![image](https://raw.githubusercontent.com/Autom-liu/shiro-learn/ss/image/SessionManager.png)
+
+![image](https://raw.githubusercontent.com/Autom-liu/shiro-learn/ss/image/SessionSecurityManager.png)
+
+### 自定义session容器
+
+在这些类中有一个很重要的属性`sessionDAO`它是一个接口，提供了开发者灵活的对session进行增删改查的控制。
+因此它不依赖于指定容器，可以使用tomcat的session，也可以使用redis、memcache等缓存工具。
+
+但是只需要实现基本的增删改查操作，剩下的校验管理相关的问题交给自带的session管理器搞定。
+
+```java
+public interface SessionDAO {
+    Serializable create(Session session);   // 创建session操作，指定你使用那个session容器
+    Session readSession(Serializable sessionId) throws UnknownSessionException; // 读操作
+    void update(Session session) throws UnknownSessionException;    // 更新操作
+    void delete(Session session);   // 删除操作
+    Collection<Session> getActiveSessions();    // 读操作（获取所有键）
+}
+```
+
+具体如何实现，可以参考shiro提供的一个默认实现类：`MemorySessionDAO` 
+这是基于Map管理的session容器，改用其它容器原理也类似。
+它是继承自`AbstractSessionDAO` 的，这个抽象类实现了上面接口的通用功能，同时也增加了以do开头的抽象方法，供子类实现。
+比如readSession方法，就增加了对空判断，主要逻辑还是由子类`doReadSession`定义，返回空则能抛出shiro的通用异常。
+
+```java
+public Session readSession(Serializable sessionId) throws UnknownSessionException {
+    Session s = doReadSession(sessionId);  // 抽象方法，由子类实现
+    if (s == null) {
+        throw new UnknownSessionException("There is no session with id [" + sessionId + "]");
+    }
+    return s;
+}
+```
+
+使用了自定义的容器后，在web项目中，还需要整个spring注入：
+
+```xml
+   <!--  shiro 会话管理器  -->
+    <bean class="com.edu.scnu.web.shiro.CustomSessionManager" id="sessionManager">
+        <property name="sessionDAO" ref="redisSession" />
+    </bean>
+    <!--  自定义的会话管理操作  -->
+    <bean class="com.edu.scnu.web.shiro.RedisSession" id="redisSession" />
+```
+
+就那么简单！
+
+### 自定义session 管理器
+
+有时候根据性能优化的需要，可能不能采用默认的session管理器，而需要手动重写DefaultWebSessionManager
+
+而推荐重写的是DefaultWebSessionManager 或 DefaultSessionManager 而不是他们的抽象类 AbstractValidatingSessionManager
+因为只需重写一个最重要的读操作即可：
+
+```java
+/**
+     * Looks up a session from the underlying data store based on the specified session key.
+     */
+    protected abstract Session retrieveSession(SessionKey key) throws UnknownSessionException;
+```
+
+这个方法就是用来管理读操作的，可以参考 shiro的核心默认实现
+
+```java
+    protected Session retrieveSession(SessionKey sessionKey) throws UnknownSessionException {
+        // 推荐使用父类的getSessionId方法
+        Serializable sessionId = getSessionId(sessionKey);
+        // 下面语句相当于 sessionDAO.readSession(sessionId);  即读操作
+        Session s = retrieveSessionFromDataSource(sessionId);
+        return s;
+    }
+```
+
+在web环境中，使用DefaultWebSessionManager的getSessionId方法，默认会从两个地方获取sessionKey
+一个是在cookie中，另一个是Url参数中，DefaultWebSessionManager会为我们重写Url从而能在cookie失效的环境下获取sessionId
+
+如果不需要cookie或重写URL那么可以设置`setSessionIdCookieEnabled`和`setSessionIdUrlRewritingEnabled`为false
+但是这样并不会生效的，因此请你一定要调用`getSessionId`方法。
+
+## 缓存管理
+
+先来看一下缓存管理相关类图：
+
+![image](https://raw.githubusercontent.com/Autom-liu/shiro-learn/ss/image/CachingManager.png)
+
+核心有3个接口：
+
+### cache<K, V>
+
+```java
+public interface Cache<K, V> {
+    V get(K var1) throws CacheException;
+
+    V put(K var1, V var2) throws CacheException;
+
+    V remove(K var1) throws CacheException;
+
+    void clear() throws CacheException;
+
+    int size();
+
+    Set<K> keys();
+
+    Collection<V> values();
+}
+```
+
+对于缓存，由于使用的容器不同，redis, memcache, monogodb等，造成了操作方法都不一样。
+为了统一所有不同容器的缓存操作，因此就有了shiro提供的缓存接口。
+shiro提供的基本实现是MapCache，基于内存的缓存。
+
+### CacheManager
+
+```java
+public interface CacheManager {
+    <K, V> Cache<K, V> getCache(String var1) throws CacheException;
+}
+```
+
+只有一个方法，那就是根据名称获得一个Cache
+
+### CacheManagerAware
+
+```java
+public interface CacheManagerAware {
+    void setCacheManager(CacheManager var1);
+}
+```
+
+只有一个方法，用于注入CacheManager，
+DefaultSecurityManager会检查对象是否实现了CacheManagerAware接口
+只有实现的对象才会被注入。
+
+### CachingRealm
+
+先来看看Realm的缓存类图：
+
+![image](https://raw.githubusercontent.com/Autom-liu/shiro-learn/ss/image/CacheRealm.png)
+
+CachingRealm 就是用来缓存上面说的那两个Realm数据的
+
+要实现Realm缓存，首先对Cache接口进行实现，即完成缓存容器的增删改查操作
+
+接下来实现的是缓存管理器CacheManager，重写getCache方法，返回之前定义好的Cache实现对象。
+
+最后定义bean注入即可：
+
+```xml
+    <bean class="org.apache.shiro.web.mgt.DefaultWebSecurityManager" id="securityManager">
+        <property name="realm" ref="customRealm" />
+        <property name="sessionManager" ref="sessionManager"/>
+        <property name="cacheManager" ref="cacheManager" />
+    </bean>
+    <bean class="com.edu.scnu.web.shiro.RedisCacheManager" id="cacheManager" />
+```
+
+### AbstractCacheManage
+
+最后来看一下session缓存，sessionSecurityManager会对实现了CacheManagerAware的SessionManager进行缓存
+
+同时也会对实现了CacheManagerAware的sessionDAO进行缓存。
+
+当然，如果我们的sessionDAO本身就基于缓存的，那么session缓存不用也罢。
+
+因此在实际开发中，缓存主要用来Realm缓存，角色和权限数据.
+
+
+完~~~
